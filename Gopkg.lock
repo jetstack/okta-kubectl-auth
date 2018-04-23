@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  name = "github.com/PuerkitoBio/goquery"
+  packages = ["."]
+  revision = "a86ea073017a6beddef78c8659e7224e8ca634b0"
+  version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/andybalholm/cascadia"
+  packages = ["."]
+  revision = "901648c87902174f774fac311d7f176f8647bdaa"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "v2"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
@@ -11,6 +23,18 @@
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/headzoo/surf"
+  packages = [
+    "agent",
+    "browser",
+    "errors",
+    "jar",
+    "util"
+  ]
+  revision = "60198774ccce43e1d26c80e961497b7d262460b3"
   version = "v1.0.0"
 
 [[projects]]
@@ -64,7 +88,9 @@
   name = "golang.org/x/net"
   packages = [
     "context",
-    "context/ctxhttp"
+    "context/ctxhttp",
+    "html",
+    "html/atom"
   ]
   revision = "d41e8174641f662c5a2d1c7a5f9e828788eb8706"
 
@@ -92,6 +118,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "gopkg.in/headzoo/surf.v1"
+  packages = ["."]
+  revision = "60198774ccce43e1d26c80e961497b7d262460b3"
+  version = "v1.0.0"
+
+[[projects]]
   name = "gopkg.in/square/go-jose.v2"
   packages = [
     ".",
@@ -104,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "112568989a0ebed88472ba06ac8aeb183e3f123133380212cd6f975fd3348c1a"
+  inputs-digest = "8493b77af8ac80a6b2e26f45f4dd2e2b4add95556c403a829388b1734231d45c"
   solver-name = "gps-cdcl"
   solver-version = 1
