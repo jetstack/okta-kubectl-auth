@@ -122,6 +122,7 @@ func TestOktaE2E(t *testing.T) {
 
 	// Set clientID and clientSecret in app
 	oc := okta.New(&logger)
+	oc.Debug = testing.Verbose()
 	oc.BaseDomain = os.Getenv(envOktaBaseDomain)
 	oc.ClientID = app.ID
 	oc.ClientSecret = clientSecret

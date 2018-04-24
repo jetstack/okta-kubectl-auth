@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -49,6 +50,11 @@ func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopC
 			err   error
 			token *oauth2.Token
 		)
+
+		rDump, err := httputil.DumpRequest(r, true)
+		if err == nil {
+			o.log.Debug().Interface("request", rDump).Msg("callback received")
+		}
 
 		ctx := oidc.ClientContext(r.Context(), o.client())
 		oauth2Config := o.OAuth2Config(nil)
