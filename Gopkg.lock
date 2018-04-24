@@ -14,6 +14,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
+
+[[projects]]
   branch = "v2"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
@@ -28,6 +34,7 @@
 [[projects]]
   name = "github.com/headzoo/surf"
   packages = [
+    ".",
     "agent",
     "browser",
     "errors",
@@ -136,6 +143,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8493b77af8ac80a6b2e26f45f4dd2e2b4add95556c403a829388b1734231d45c"
+  inputs-digest = "1107895af640567fdfb861ab43c9195771650d9a5fc7619fc12252fdd398b6d2"
   solver-name = "gps-cdcl"
   solver-version = 1
