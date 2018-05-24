@@ -23,7 +23,7 @@ const envOktaBaseDomain = "OKTA_BASE_DOMAIN"
 
 func UserSession(baseDomain string, user string, password string) (string, error) {
 	resp, err := http.DefaultClient.Post(
-		fmt.Sprintf("https://%s/api/v1/authn", baseDomain),
+		fmt.Sprintf("%s/api/v1/authn", baseDomain),
 		"application/json",
 		bytes.NewReader([]byte(fmt.Sprintf(`{
   "username": "%s",

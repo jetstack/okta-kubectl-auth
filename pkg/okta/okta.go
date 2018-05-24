@@ -66,15 +66,20 @@ type Okta struct {
 	server *http.Server
 }
 
-func New(log *zerolog.Logger) *Okta {
+func New(log *zerolog.Logger, debug bool) *Okta {
 	if log == nil {
 		var logger = zerolog.New(os.Stderr).With().Timestamp().Logger()
+		if debug {
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		} else {
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		}
 		log = &logger
 	}
 
 	return &Okta{
 		log:      *log,
-		Scopes:   []string{"openid", "email", "groups", "profile"},
+		Scopes:   []string{"openid", "profile", "groups", "email"},
 		BindAddr: "127.0.0.1:8888",
 	}
 }
@@ -175,7 +180,6 @@ func (o *Okta) Authorize(authCodeURLCh chan string) error {
 		authCodeURL = o.OAuth2Config(scopes).AuthCodeURL(state, oauth2.AccessTypeOffline)
 	}
 
-	// add nonce and correct request_type to redirect URL
 	authCodeURLParsed, err := url.Parse(authCodeURL)
 	if err != nil {
 		return err
@@ -187,25 +191,39 @@ func (o *Okta) Authorize(authCodeURLCh chan string) error {
 	authCodeURL = authCodeURLParsed.String()
 
 	tokenCh, err := o.retrieveToken(state, nonce)
-	if err != nil {
-		return err
-	}
 
-	o.log.Info().Msgf("please navigate to %s and login to your okta account", authCodeURL)
+	fmt.Printf("\nPlease navigate to the following URL and login to your Okta account:\n\n%s\n", authCodeURL)
 	// publish URL in channel
 	if authCodeURLCh != nil {
 		authCodeURLCh <- authCodeURL
 	}
 
 	token := <-tokenCh
-	o.log.Debug().Str("id_token", token.IDToken).Str("access_token", token.AccessToken).Str("refresh_token", token.RefreshToken).Msg("received tokens")
+
+	o.printApiserverConfiguration()
+
+	o.printKubectlConfiguration(token.RefreshToken)
 
 	return nil
 
 }
 
+func (o *Okta) printKubectlConfiguration(refreshToken string) {
+
+	fmt.Printf("\nRun the following command (replacing <username> with a user in your kubeconfig) to configure kubectl for OIDC authentication:\n\nkubectl config set-credentials \\\n  --auth-provider=oidc \\\n  --auth-provider-arg=idp-issuer-url=%s \\\n  --auth-provider-arg=client-id=%s \\\n  --auth-provider-arg=client-secret=%s \\\n  --auth-provider-arg=refresh-token=%s \\\n  <username>\n", o.BaseDomain, o.ClientID, o.ClientSecret, refreshToken)
+
+	return
+}
+
+func (o *Okta) printApiserverConfiguration() {
+
+	fmt.Printf("\nConfigure the apiserver with the following flags:\n\n--oidc-issuer-url=%s\n--oidc-client-id=%s\n--oidc-username-claim=preferred_username\n--oidc-username-prefix=okta:\n--oidc-groups-claim=groups\n--oidc-groups-prefix=okta:\n", o.BaseDomain, o.ClientID)
+
+	return
+}
+
 func (o *Okta) IssuerURL() string {
-	return fmt.Sprintf("https://%s", o.BaseDomain)
+	return o.BaseDomain
 }
 
 func (o *Okta) RedirectURL() string {
