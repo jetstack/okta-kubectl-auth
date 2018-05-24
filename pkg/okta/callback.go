@@ -139,7 +139,8 @@ func (o *Okta) handleCallback(expectedState string, expectedNonce string, tokenC
 
 		// shutdown http server gracefully
 		go func() {
-			ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
 			o.server.Shutdown(ctx)
 		}()
 	}
