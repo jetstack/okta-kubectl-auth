@@ -15,7 +15,7 @@ import (
 	"github.com/headzoo/surf"
 	"github.com/rs/zerolog"
 
-	"github.com/simonswine/okta-kubectl-auth/pkg/okta"
+	"github.com/jetstack/okta-kubectl-auth/pkg/okta"
 )
 
 const envAdminAPIToken = "OKTA_ADMIN_API_TOKEN"

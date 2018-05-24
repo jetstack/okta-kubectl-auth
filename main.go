@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/simonswine/okta-kubectl-auth/cmd"
+	"github.com/jetstack/okta-kubectl-auth/cmd"
 )
 
 func main() {
