@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"time"
 
@@ -73,7 +74,7 @@ func New(log *zerolog.Logger) *Okta {
 
 	return &Okta{
 		log:      *log,
-		Scopes:   []string{"openid", "email", "groups"},
+		Scopes:   []string{"openid", "email", "groups", "profile"},
 		BindAddr: "127.0.0.1:8888",
 	}
 }
@@ -158,6 +159,11 @@ func (o *Okta) Authorize(authCodeURLCh chan string) error {
 		return err
 	}
 
+	nonce, err := GenerateRandomString(16)
+	if err != nil {
+		return err
+	}
+
 	var authCodeURL string
 	scopes := o.Scopes
 
@@ -169,7 +175,18 @@ func (o *Okta) Authorize(authCodeURLCh chan string) error {
 		authCodeURL = o.OAuth2Config(scopes).AuthCodeURL(state, oauth2.AccessTypeOffline)
 	}
 
-	idTokenCh, err := o.retrieveToken(state)
+	// add nonce and correct request_type to redirect URL
+	authCodeURLParsed, err := url.Parse(authCodeURL)
+	if err != nil {
+		return err
+	}
+	q := authCodeURLParsed.Query()
+	q.Set("nonce", nonce)
+	q.Set("response_mode", "form_post")
+	authCodeURLParsed.RawQuery = q.Encode()
+	authCodeURL = authCodeURLParsed.String()
+
+	tokenCh, err := o.retrieveToken(state, nonce)
 	if err != nil {
 		return err
 	}
@@ -180,8 +197,8 @@ func (o *Okta) Authorize(authCodeURLCh chan string) error {
 		authCodeURLCh <- authCodeURL
 	}
 
-	idToken := <-idTokenCh
-	o.log.Debug().Str("id_token", idToken).Msg("received token")
+	token := <-tokenCh
+	o.log.Debug().Str("id_token", token.IDToken).Str("access_token", token.AccessToken).Str("refresh_token", token.RefreshToken).Msg("received tokens")
 
 	return nil
 
