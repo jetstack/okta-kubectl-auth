@@ -16,13 +16,19 @@ import (
 
 const CallbackPath = "/callback"
 
-func (o *Okta) retrieveToken(state string) (idTokenCh chan string, err error) {
-	idTokenCh = make(chan string)
+type token struct {
+	RefreshToken string // token to refresh access/id_token
+	AccessToken  string // JWT with an access bearer token
+	IDToken      string // OIDC JWT
+}
+
+func (o *Okta) retrieveToken(state string, nonce string) (tokenCh chan token, err error) {
+	tokenCh = make(chan token)
 	stopCh := make(chan struct{})
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(CallbackPath, o.handleCallback(state, idTokenCh, stopCh))
+	mux.HandleFunc(CallbackPath, o.handleCallback(state, nonce, tokenCh, stopCh))
 
 	o.server = &http.Server{
 		Addr:    o.BindAddr,
@@ -41,14 +47,15 @@ func (o *Okta) retrieveToken(state string) (idTokenCh chan string, err error) {
 		}
 	}()
 
-	return idTokenCh, nil
+	return tokenCh, nil
 }
 
-func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopCh chan struct{}) http.HandlerFunc {
+func (o *Okta) handleCallback(expectedState string, expectedNonce string, tokenCh chan token, stopCh chan struct{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var (
-			err   error
-			token *oauth2.Token
+			err           error
+			tokenExchange *oauth2.Token
+			t             token
 		)
 
 		rDump, err := httputil.DumpRequest(r, true)
@@ -59,7 +66,7 @@ func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopC
 		ctx := oidc.ClientContext(r.Context(), o.client())
 		oauth2Config := o.OAuth2Config(nil)
 		switch r.Method {
-		case "GET":
+		case "POST":
 			// Authorization redirect callback from OAuth2 auth flow.
 			if errMsg := r.FormValue("error"); errMsg != "" {
 				errMsg += ": " + r.FormValue("error_description")
@@ -80,19 +87,7 @@ func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopC
 				o.log.Error().Msg(errMsg)
 				return
 			}
-			token, err = oauth2Config.Exchange(ctx, code)
-		case "POST":
-			// Form request from frontend to refresh a token.
-			refresh := r.FormValue("refresh_token")
-			if refresh == "" {
-				http.Error(w, fmt.Sprintf("no refresh_token in request: %q", r.Form), http.StatusBadRequest)
-				return
-			}
-			t := &oauth2.Token{
-				RefreshToken: refresh,
-				Expiry:       time.Now().Add(-time.Hour),
-			}
-			token, err = oauth2Config.TokenSource(ctx, t).Token()
+			tokenExchange, err = oauth2Config.Exchange(ctx, code)
 		default:
 			errMsg := fmt.Sprintf("method not implemented: %s", r.Method)
 			http.Error(w, errMsg, http.StatusBadRequest)
@@ -107,12 +102,20 @@ func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopC
 			return
 		}
 
-		rawIDToken, ok := token.Extra("id_token").(string)
+		rawIDToken, ok := tokenExchange.Extra("id_token").(string)
 		if !ok {
 			errMsg := "no id_token in token response"
 			http.Error(w, errMsg, http.StatusInternalServerError)
 			o.log.Error().Msg(errMsg)
 			return
+		}
+
+		if refreshToken, ok := tokenExchange.Extra("refresh_token").(string); ok {
+			t.RefreshToken = refreshToken
+		}
+
+		if accessToken, ok := tokenExchange.Extra("token").(string); ok {
+			t.AccessToken = accessToken
 		}
 
 		idToken, err := o.verifier().Verify(r.Context(), rawIDToken)
@@ -129,7 +132,8 @@ func (o *Okta) handleCallback(expectedState string, idTokenCh chan string, stopC
 		json.Indent(buff, []byte(claims), "", "  ")
 
 		o.log.Debug().Str("claims", buff.String()).Msg("claims received")
-		idTokenCh <- rawIDToken
+		t.IDToken = rawIDToken
+		tokenCh <- t
 
 		w.Write([]byte(`ok!`))
 
