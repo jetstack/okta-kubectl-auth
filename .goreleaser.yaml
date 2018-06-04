@@ -1,0 +1,22 @@
+builds:
+  -
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+    flags: -tags netgo
+archive:
+  format: binary
+release:
+  github:
+    owner: jetstack
+    name: okta-kubectl-auth
+
+sign:
+  signature: "${artifact}.asc"
+  artifacts: checksum
+  args: ["-u", "tech+releases@jetstack.io", "--output", "${signature}", "--detach-sign", "--armor",  "${artifact}"]
