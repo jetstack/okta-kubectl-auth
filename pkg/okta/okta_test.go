@@ -23,7 +23,7 @@ const envOktaBaseDomain = "OKTA_BASE_DOMAIN"
 
 func UserSession(baseDomain string, user string, password string) (string, error) {
 	resp, err := http.DefaultClient.Post(
-		fmt.Sprintf("https://%s/api/v1/authn", baseDomain),
+		fmt.Sprintf("%s/api/v1/authn", baseDomain),
 		"application/json",
 		bytes.NewReader([]byte(fmt.Sprintf(`{
   "username": "%s",
@@ -78,7 +78,7 @@ func TestOktaE2E(t *testing.T) {
 		t.Fatal("unexpected error generating random string: ", err)
 	}
 
-	o := okta.New(&logger)
+	o := okta.New(&logger, true)
 
 	if os.Getenv(envAdminAPIToken) == "" || os.Getenv(envOktaBaseDomain) == "" {
 		t.Skipf("Skip E2E tests as mandatory environment variables %s and/or %s are not set", envAdminAPIToken, envOktaBaseDomain)
@@ -121,7 +121,7 @@ func TestOktaE2E(t *testing.T) {
 	logger.Info().Str("client_secret", clientSecret).Msg("acquired client secret")
 
 	// Set clientID and clientSecret in app
-	oc := okta.New(&logger)
+	oc := okta.New(&logger, true)
 	oc.Debug = testing.Verbose()
 	oc.BaseDomain = os.Getenv(envOktaBaseDomain)
 	oc.ClientID = app.ID

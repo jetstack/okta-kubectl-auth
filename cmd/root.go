@@ -27,7 +27,7 @@ var RootCmd = &cobra.Command{
 		o := newOkta(flags)
 
 		if err := o.Authorize(nil); err != nil {
-			return err
+			return fmt.Errorf("failed to authorise: %s", err)
 		}
 
 		return nil
@@ -43,7 +43,7 @@ func Execute() {
 }
 
 func newOkta(flags *Flags) *okta.Okta {
-	o := okta.New(nil)
+	o := okta.New(nil, flags.Debug)
 	o.BaseDomain = flags.BaseDomain
 	o.BindAddr = flags.BindAddr
 	o.ClientID = flags.ClientID

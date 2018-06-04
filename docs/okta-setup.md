@@ -18,4 +18,4 @@ This page summarises the steps needed to setup an Okta application that uses the
 - In the Access Policies tab add a new access policy and assign your application. 
 - Add a new rule to your access policcy called Default Policy Rule keeping all the settings as they are.
 - You can test your setup by going to the Token Preview tab, specifying your application as the client, grant type as authorisation code and scopes as groups and openid. The returned payload should contain the list of groups containing the user you chose.
-- Note that okta-kubectl-auth uses scopes of groups, openid, profile and offline_access to return a `preferred_username` claim as well as a refresh token.
+- Note that okta-kubectl-auth uses scopes of groups, openid, profile, email and (if supported) offline_access to return `email` and `preferred_username` claims as well as a refresh token.

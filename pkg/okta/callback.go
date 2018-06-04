@@ -114,6 +114,13 @@ func (o *Okta) handleCallback(expectedState string, expectedNonce string, tokenC
 			t.RefreshToken = refreshToken
 		}
 
+		if t.RefreshToken == "" {
+			errMsg := fmt.Sprintf("Empty refresh token")
+			http.Error(w, errMsg, http.StatusInternalServerError)
+			o.log.Error().Msg(errMsg)
+			return
+		}
+
 		if accessToken, ok := tokenExchange.Extra("token").(string); ok {
 			t.AccessToken = accessToken
 		}
@@ -132,6 +139,7 @@ func (o *Okta) handleCallback(expectedState string, expectedNonce string, tokenC
 		json.Indent(buff, []byte(claims), "", "  ")
 
 		o.log.Debug().Str("claims", buff.String()).Msg("claims received")
+
 		t.IDToken = rawIDToken
 		tokenCh <- t
 
