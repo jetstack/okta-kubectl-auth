@@ -121,7 +121,7 @@ func (o *Okta) handleCallback(expectedState string, expectedNonce string, tokenC
 			return
 		}
 
-		if accessToken, ok := tokenExchange.Extra("token").(string); ok {
+		if accessToken, ok := tokenExchange.Extra("access_token").(string); ok {
 			t.AccessToken = accessToken
 		}
 
